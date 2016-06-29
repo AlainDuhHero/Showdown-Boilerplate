@@ -1,21 +1,43 @@
 'use strict';
-
-let color = require('../config/color');
+/********************
+ * Money System
+ * (Formerly economy.js)
+ * This file handles the money system and some of its key commands like the shop
+********************/
 let fs = require('fs');
+let color = require('../config/color');
 let path = require('path');
+let rankLadder = require('../rank-ladder');
+let highRollers = ['alainduhhero'];
+let toggleRolling = false;
 
 let shop = [
 	['Symbol', 'Buys a custom symbol to go infront of name and puts you at top of userlist. (Temporary until restart, certain symbols are blocked)', 5],
-	['Fix', 'Buys the ability to alter your current custom avatar or trainer card. (don\'t buy if you have neither)', 10],
-	['Avatar', 'Buys an custom avatar to be applied to your name (You supply. Images larger than 80x80 may not show correctly)', 20],
-	['League Room', 'Purchases a room at a reduced rate for use with a league.  A roster must be supplied with at least 10 members for this room.', 25],
-	['Trainer', 'Buys a trainer card which shows information through a command. (You supply, can be refused)', 40],
-	['Staff Help', 'Staff member will help set up roomintros and anything else needed in a room. Response may not be immediate.', 50],
-	['Icon', 'Buy a custom icon that can be applied to the rooms you want. You must take into account that the provided image should be 32 x 32', 75],
-	['Room', 'Buys a chatroom for you to own. (within reason, can be refused)', 100],
+	['Fix', 'Buys the ability to alter your current custom avatar, trainer card, title or icon. (don\'t buy if you don\'t have one)', 10],
+	['Title', 'Buys an custom title that will appear next to your name in profile. (You select the text and color of your title. Can be refused within reason.)', 10],
+	['Global Declare', 'Buys the ability to globally declare for a user-run event that awards bucks.', 15],
+	['Avatar', 'Buys an custom avatar to be applied to your name. (You supply. Images larger than 80x80 may not show correctly, can be refused.)', 25],
+	['Extra Rooms for Icon', 'Allows your icon to appear in an extra room, PM Master Float or AuraStormLucario with the extra room you want (Will take time to appear).', 30],
+	['Trainer', 'Buys a trainer card which shows information through a command. (You supply, can be refused).', 40],
+	['League Room', 'Purchases a room at a reduced rate for use with a league.  A roster must be supplied with at least 10 members for this room.', 45],
+	['Room Rename', 'Rename your chatroom to another name', 45],
+	['League Shop', 'Purchases a League Shop for use in your league room, room must be a league room.', 70],
+	['Room', 'Buys a chatroom for you to own. (Can be deleted if it goes inactive for too long. Within reason, can be refused. You are responsible for your room, if you get in trouble your room may be deleted.)', 90],
+	['Custom Emote', 'Buys a custom emote to be displays when the command is entered. (Size must be 50x50, can be refused)', 100],
+	['Casino Games', 'Allows Casino Games to be played in your chatroom. (Notice: Global Staff are not responsible for gambling in non-official rooms.)', 200],
+	['Userlist Icon', 'Purchases a userlist icon of your choice, PM Master Float or AuraStormLucario with the icon and rooms you want it in (Size must be 32x32, 3 rooms maximum, will take time to appear).', 350],
+	['Room Icon', 'Purchases an icon of your choice for the top of the userlist in your chatroom. (Must be approved by room founder of room)', 400],
 ];
 
 let shopDisplay = getShopDisplay(shop);
+
+function alertStaff(msg) {
+	Users.users.forEach(function (user) {
+		if (user.isStaff) {
+			user.send('|pm|~Shop Alert|' + user.getIdentity() + '|' + msg);
+		}
+	});
+}
 
 /**
  * Gets an amount and returns the amount with the name of the currency.
@@ -28,10 +50,10 @@ let shopDisplay = getShopDisplay(shop);
  * @param {Number} amount
  * @returns {String}
  */
-function currencyName(amount) {
+global.currencyName = function (amount) {
 	let name = " buck";
 	return amount === 1 ? name : name + "s";
-}
+};
 
 /**
  * Checks if the money input is actually money.
@@ -39,26 +61,26 @@ function currencyName(amount) {
  * @param {String} money
  * @return {String|Number}
  */
-function isMoney(money) {
+global.isMoney = function (money) {
 	let numMoney = Number(money);
 	if (isNaN(money)) return "Must be a number.";
 	if (String(money).includes('.')) return "Cannot contain a decimal.";
 	if (numMoney < 1) return "Cannot be less than one buck.";
 	return numMoney;
-}
+};
 
 /**
  * Log money to logs/money.txt file.
  *
  * @param {String} message
  */
-function logMoney(message) {
+global.logMoney = function (message) {
 	if (!message) return;
 	let file = path.join(__dirname, '../logs/money.txt');
 	let date = "[" + new Date().toUTCString() + "] ";
 	let msg = message + "\n";
 	fs.appendFile(file, date + msg);
-}
+};
 
 /**
  * Displays the shop
@@ -66,22 +88,20 @@ function logMoney(message) {
  * @param {Array} shop
  * @return {String} display
  */
+
 function getShopDisplay(shop) {
-	let display = "<table border='1' cellspacing='0' cellpadding='5' width='100%'>" +
-					"<tbody><tr><th>Command</th><th>Description</th><th>Cost</th></tr>";
+	let display = '<center><b><font color="red" size="4">Read the description of the item you want to buy if you haven\'t already.</font></b></center></center><div style="box-shadow: 4px 4px 4px #000 inset, -4px -4px 4px #000 inset, 5px 3px 8px rgba(0, 0, 0, 0.6); max-height: 310px; overflow-y: scroll;"><table style="width: 100%; border-collapse: collapse;"><table style="width: 100%; border-collapse: collapse;"><tr><th colspan="3" class="table-header" style="background: -moz-linear-gradient(right, #09263A, #03121C); background: -webkit-linear-gradient(left, #09263A, #03121C); background: -o-linear-gradient(right, #09263A, #03121C); background: linear-gradient(right, #09263A, #03121C); padding: 8px 20px 16px 8px; box-shadow: 0px 0px 4px rgba(255, 255, 255, 0.8) inset; text-shadow: 1px 1px #0A2D43, 2px 2px #0A2D43, 3px 3px #0A2D43, 4px 4px #0A2D43, 5px 5px #0A2D43, 6px 6px #0A2D43, 7px 7px #0A2D43, 8px 8px #0A2D43, 9px 9px #0A2D43, 10px 10px #0A2D43;"><h2>Avalons Shop</h2></th></tr>' +
+		'<tr><th class="table-header" style="background: -moz-linear-gradient(#173C54, #061C2A); background: -webkit-linear-gradient(#173C54, #061C2A); background: -o-linear-gradient(#173C54, #061C2A); background: linear-gradient(#173C54, #061C2A); box-shadow: 0px 0px 4px rgba(255, 255, 255, 0.8) inset;">Item</th><th class="table-header" style="background: -moz-linear-gradient(#173C54, #061C2A); background: -webkit-linear-gradient(#173C54, #061C2A); background: -o-linear-gradient(#173C54, #061C2A); background: linear-gradient(#173C54, #061C2A); box-shadow: 0px 0px 4px rgba(255, 255, 255, 0.8) inset;">Description</th><th class="table-header" style="background: -moz-linear-gradient(#173C54, #061C2A); background: -webkit-linear-gradient(#173C54, #061C2A); background: -o-linear-gradient(#173C54, #061C2A); background: linear-gradient(#173C54, #061C2A); box-shadow: 0px 0px 4px rgba(255, 255, 255, 0.8) inset;">Cost</th></tr>';
 	let start = 0;
 	while (start < shop.length) {
-		display += "<tr>" +
-						"<td align='center'><button name='send' value='/buy " + shop[start][0] + "'><b>" + shop[start][0] + "</b></button>" + "</td>" +
-						"<td align='center'>" + shop[start][1] + "</td>" +
-						"<td align='center'>" + shop[start][2] + "</td>" +
-					"</tr>";
+		display += '<tr><td class="table-option"><button class="table-btn" name="send" value="/buy ' + shop[start][0] + '">' + shop[start][0] + '</button></td>' +
+			'<td class="table-option">' + shop[start][1] + '</td>' +
+			'<td class="table-option">' + shop[start][2] + '</td></tr>';
 		start++;
 	}
-	display += "</tbody></table><center>To buy an item from the shop, use /buy <em>command</em>.</center>";
+	display += '</table></div>';
 	return display;
 }
-
 
 /**
  * Find the item in the shop.
@@ -99,12 +119,12 @@ function findItem(item, money) {
 		price = shop[len][2];
 		if (price > money) {
 			amount = price - money;
-			this.errorReply("You don't have you enough money for this. You need " + amount + currencyName(amount) + " more to buy " + item + ".");
+			this.sendReply("You don't have you enough money for this. You need " + amount + currencyName(amount) + " more to buy " + item + ".");
 			return false;
 		}
 		return price;
 	}
-	this.errorReply(item + " not found in shop.");
+	this.sendReply(item + " not found in shop.");
 }
 
 /**
@@ -120,30 +140,37 @@ function handleBoughtItem(item, user, cost) {
 		this.sendReply("You have purchased a custom symbol. You can use /customsymbol to get your custom symbol.");
 		this.sendReply("You will have this until you log off for more than an hour.");
 		this.sendReply("If you do not want your custom symbol anymore, you may use /resetsymbol to go back to your old symbol.");
-	} else if (item === 'icon') {
-		this.sendReply('You purchased an icon, contact an administrator to obtain the article.');
+	} else if (item === 'room' || item === 'leagueroom' || item === 'avatar') {
+		if (item === 'avatar') {
+			user.sendAvatar = true;
+			this.sendReply("|raw|<div class='brodcast-green'>You have purchased an avatar, use /sendavatar [url to avatar image] to let the staff know what avatar you want.</div>");
+		} else {
+			user.canSendRoomName = true;
+			this.sendReply("You have purchased a room, use /sendroomname [room name you want] to let the staff know what your room name you want.");
+		}
 	} else {
 		let msg = '**' + user.name + " has bought " + item + ".**";
 		Rooms.rooms.staff.add('|c|~Shop Alert|' + msg);
 		Rooms.rooms.staff.update();
-		Users.users.forEach(function (user) {
-			if (user.group === '~' || user.group === '&') {
-				user.send('|pm|~Shop Alert|' + user.getIdentity() + '|' + msg);
-			}
-		});
+		alertStaff(msg);
 	}
+	logMoney(user.name + ' has spent ' + cost + ' bucks on a ' + item);
 }
 
 exports.commands = {
+	balance: 'wallet',
+	bal: 'wallet',
 	atm: 'wallet',
 	purse: 'wallet',
 	wallet: function (target, room, user) {
 		if (!this.runBroadcast()) return;
 		if (!target) target = user.name;
 
-		const amount = Db('money').get(toId(target), 0);
-		let group = user.getIdentity().charAt(0);
-		this.sendReply("|raw|<font color=#948A88>" + group +  "</font><font color=" + color(user.userid) + "><b>" + Tools.escapeHTML(target) + "</b></font> has " + amount + currencyName(amount) + ".");
+		const targetId = toId(target);
+		if (!targetId) return this.parse('/help wallet');
+
+		const amount = Db('money').get(targetId, 0);
+		this.sendReplyBox('<b><font color="' + hashColor(targetId) + '">' + Tools.escapeHTML(target) + '</font></b> has ' + amount + currencyName(amount) + '.');
 	},
 	wallethelp: ["/wallet [user] - Shows the amount of money a user has."],
 
@@ -155,19 +182,25 @@ exports.commands = {
 
 		let parts = target.split(',');
 		let username = parts[0];
+		let uid = toId(username);
 		let amount = isMoney(parts[1]);
+
+		if (amount > 1000) return this.sendReply("You cannot give more than 1,000 bucks at a time.");
+		if (user.userid === username && !this.can('bypassall')) return this.errorReply("no");
+		if (username.length >= 19) return this.sendReply("Usernames are required to be less than 19 characters long.");
 
 		if (typeof amount === 'string') return this.errorReply(amount);
 
-		let total = Db('money').set(toId(username), Db('money').get(toId(username), 0) + amount).get(toId(username));
+		let total = Db('money').set(uid, Db('money').get(uid, 0) + amount).get(uid);
 		amount = amount + currencyName(amount);
 		total = total + currencyName(total);
 		this.sendReply(username + " was given " + amount + ". " + username + " now has " + total + ".");
-		if (Users.get(username)) Users(username).popup(user.name + " has given you " + amount + ". You now have " + total + ".");
-		logMoney(username + " was given " + amount + " by " + user.name + ". " + username + " now has " + total);
+		if (Users.get(username)) Users.get(username).popup(user.name + " has given you " + amount + ". You now have " + total + ".");
+		logMoney(username + " was given " + amount + " by " + user.name + ".");
 	},
 	givemoneyhelp: ["/givemoney [user], [amount] - Give a user a certain amount of money."],
 
+	removebucks: 'takemoney',
 	takebuck: 'takemoney',
 	takebucks: 'takemoney',
 	takemoney: function (target, room, user) {
@@ -176,16 +209,21 @@ exports.commands = {
 
 		let parts = target.split(',');
 		let username = parts[0];
+		let uid = toId(username);
 		let amount = isMoney(parts[1]);
 
-		if (typeof amount === 'string') return this.errorReply(amount);
+		if (amount > 1000) return this.sendReply("You cannot remove more than 1,000 bucks at a time.");
+		if (amount > Db('money').get(uid)) return this.sendReply("The user's total money is less than " + amount + ".");
+		if (username.length >= 19) return this.sendReply("Usernames are required to be less than 19 characters long.");
 
-		let total = Db('money').set(toId(username), Db('money').get(toId(username), 0) - amount).get(toId(username));
+		if (typeof amount === 'string') return this.sendReply(amount);
+
+		let total = Db('money').set(uid, Db('money').get(uid, 0) - amount).get(uid);
 		amount = amount + currencyName(amount);
 		total = total + currencyName(total);
-		this.sendReply(username + " losted " + amount + ". " + username + " now has " + total + ".");
-		if (Users.get(username)) Users(username).popup(user.name + " has taken " + amount + " from you. You now have " + total + ".");
-		logMoney(username + " had " + amount + " taken away by " + user.name + ". " + username + " now has " + total);
+		this.sendReply(username + " lost " + amount + ". " + username + " now has " + total + ".");
+		if (Users.get(username)) Users.get(username).popup(user.name + " has taken " + amount + " from you. You now have " + total + ".");
+		logMoney(username + " had " + amount + " taken away by " + user.name + ".");
 	},
 	takemoneyhelp: ["/takemoney [user], [amount] - Take a certain amount of money from a user."],
 
@@ -193,16 +231,18 @@ exports.commands = {
 	resetbucks: 'resetmoney',
 	resetmoney: function (target, room, user) {
 		if (!this.can('forcewin')) return false;
+		if(!target) target = user.name;
 		Db('money').set(toId(target), 0);
-		this.sendReply(target + " now has 0 bucks.");
+		this.sendReply(target + " now has " + 0 + currencyName(0) + ".");
 		logMoney(user.name + " reset the money of " + target + ".");
 	},
 	resetmoneyhelp: ["/resetmoney [user] - Reset user's money to zero."],
 
+	forcetransfer: 'transfermoney',
 	transfer: 'transfermoney',
 	transferbuck: 'transfermoney',
 	transferbucks: 'transfermoney',
-	transfermoney: function (target, room, user) {
+	transfermoney: function (target, room, user, connection, cmd) {
 		if (!target || target.indexOf(',') < 0) return this.parse('/help transfermoney');
 
 		let parts = target.split(',');
@@ -210,11 +250,16 @@ exports.commands = {
 		let uid = toId(username);
 		let amount = isMoney(parts[1]);
 
-		if (toId(username) === user.userid) return this.errorReply("You cannot transfer to yourself.");
-		if (username.length > 19) return this.errorReply("Username cannot be longer than 19 characters.");
-		if (typeof amount === 'string') return this.errorReply(amount);
+		if (toId(username) === user.userid) return this.sendReply("You cannot transfer to yourself.");
+		if (username.length >= 19) return this.sendReply("Usernames are required to be less than 19 characters long.");
+		if (typeof amount === 'string') return this.sendReply(amount);
 		if (amount > Db('money').get(user.userid, 0)) return this.errorReply("You cannot transfer more money than what you have.");
-
+		if (!Users.get(username) && cmd !== 'forcetransfer') return this.errorReply("The target user could not be found");
+		if (Users.get(username)) {
+			if (!Users.get(username).registered && cmd !== 'forcetransfer') {
+				return this.errorReply("WARNING: The user you are trying to transfer to is unregistered. If you want to transfer anyway use /forcetransfer [user], [amount]");
+			}
+		}
 		Db('money')
 			.set(user.userid, Db('money').get(user.userid) - amount)
 			.set(uid, Db('money').get(uid, 0) + amount);
@@ -231,7 +276,9 @@ exports.commands = {
 
 	store: 'shop',
 	shop: function (target, room, user) {
-		if (!this.runBroadcast()) return;
+		if (room.id !== 'lobby' && !room.battle) {
+			if (!this.runBroadcast()) return;
+		}
 		return this.sendReply("|raw|" + shopDisplay);
 	},
 	shophelp: ["/shop - Display items you can buy with money."],
@@ -250,10 +297,10 @@ exports.commands = {
 	buyhelp: ["/buy [command] - Buys an item from the shop."],
 
 	customsymbol: function (target, room, user) {
-		if (!user.canCustomSymbol && user.id !== user.userid) return this.errorReply("You need to buy this item from the shop.");
+		if (!user.canCustomSymbol && user.id !== user.userid) return this.sendReply("You need to buy this item from the shop.");
 		if (!target || target.length > 1) return this.parse('/help customsymbol');
-		if (target.match(/[A-Za-z\d]+/g) || '|?!+$%@\u2605=&~#\u03c4\u00a3\u03dd\u03b2\u039e\u03a9\u0398\u03a3\u00a9'.indexOf(target) >= 0) {
-			return this.errorReply("Sorry, but you cannot change your symbol to this for safety/stability reasons.");
+		if (target.match(/[A-Za-z\d]+/g) || '|?!+$%@\u2605=&~#\u03c4\u00a3\u03dd\u03b2\u039e\u03a9\u0398\u03a3\u00a9\u203d'.indexOf(target) >= 0) {
+			return this.sendReply("Sorry, but you cannot change your symbol to this for safety/stability reasons.");
 		}
 		user.customSymbol = target;
 		user.updateIdentity();
@@ -262,9 +309,31 @@ exports.commands = {
 	},
 	customsymbolhelp: ["/customsymbol [symbol] - Get a custom symbol."],
 
+	sendavatar: function (target, room, user) {
+		if (!user.sendAvatar) return this.sendReply("You need to buy this item from the shop.");
+		if (!target) return this.parse('/help sendavatar');
+		let msg = '**' + user + " has purchased an avatar and wants" + '** ' + target + ' **' + "as their image." + '**';
+		Rooms.rooms.staff.add('|c|~Shop Alert|' + msg);
+		Rooms.rooms.staff.update();
+		alertStaff(msg);
+		user.sendAvatar = false;
+	},
+	sendavatarhelp: ["/sendavatar [avatar url] - If you have purchased an avatar, use /sendavatar [url to avatar image] to let the staff know what avatar you want."],
+
+	sendroomname: function (target, room, user) {
+		if (!user.canSendRoomName) return this.sendReply("You need to buy this item from the shop.");
+		if (!target) return this.parse('/help sendavatar');
+		let msg = '**' + user + " has purchased a room and wants " + target + " as the room name." + '**';
+		Rooms.rooms.staff.add('|c|~Shop Alert|' + msg);
+		Rooms.rooms.staff.update();
+		alertStaff(msg);
+		user.canSendRoomName = false;
+	},
+	sendroomnamehelp: ["/sendroomname [name] - If you have purchased a room, use /sendroomname [name] to let staff know what you want your room to be called."],
+
 	resetcustomsymbol: 'resetsymbol',
 	resetsymbol: function (target, room, user) {
-		if (!user.hasCustomSymbol) return this.errorReply("You don't have a custom symbol.");
+		if (!user.hasCustomSymbol) return this.sendReply("You don't have a custom symbol.");
 		user.customSymbol = null;
 		user.updateIdentity();
 		user.hasCustomSymbol = false;
@@ -272,16 +341,37 @@ exports.commands = {
 	},
 	resetsymbolhelp: ["/resetsymbol - Resets your custom symbol."],
 
+	takecustomsymbol: 'takesymbol',
+	takesymbol: function (target, room, user) {
+		let targetUser = Users.get(toId(target));
+		if (!this.can('lock')) return this.errorReply("/takesymbol - Access denied");
+		if (!target) return this.parse('/help takesymbol');
+		if (!targetUser.hasCustomSymbol) return this.errorReply("This user does not have a custom symbol.");
+		let targetSymbol = targetUser.customSymbol;
+		targetUser.customSymbol = null;
+		targetUser.updateIdentity();
+		targetUser.hasCustomSymbol = false;
+		targetUser.canCustomSymbol = false;
+		this.addModCommand(user.name + " has removed the custom symbol " + targetSymbol + " from the user " + targetUser);
+		targetUser.popup("Your custom symbol " + targetSymbol + " has been removed by " + user.name + ".");
+	},
+	takesymbolhelp: ["/takesymbol - Reset target user's custom symbol, (target user must buy new symbol)"],
+
 	moneylog: function (target, room, user, connection) {
 		if (!this.can('modlog')) return;
-		target = toId(target);
-		let numLines = 15;
+		let numLines = 14;
 		let matching = true;
-		if (target.match(/\d/g) && !isNaN(target)) {
-			numLines = Number(target);
+		if (target && /\,/i.test(target)) {
+			let parts = target.split(",");
+			if (!isNaN(parts[parts.length - 1])) {
+				numLines = Number(parts[parts.length - 1]) - 1;
+				target = parts.slice(0, parts.length - 1).join(",");
+			}
+		} else if (target.match(/\d/g) && !isNaN(target)) {
+			numLines = Number(target) - 1;
 			matching = false;
 		}
-		let topMsg = "Displaying the last " + numLines + " lines of transactions:\n";
+		let topMsg = "Displaying the last " + (numLines + 1) + " lines of transactions:\n";
 		let file = path.join(__dirname, '../logs/money.txt');
 		fs.exists(file, function (exists) {
 			if (!exists) return connection.popup("No transactions.");
@@ -296,87 +386,22 @@ exports.commands = {
 			});
 		});
 	},
+	moneyloghelp: ["/moneylog - Displays a log of all transactions in the economy."],
 
+	baltop: 'richestuser',
 	moneyladder: 'richestuser',
 	richladder: 'richestuser',
 	richestusers: 'richestuser',
 	richestuser: function (target, room, user) {
 		if (!this.runBroadcast()) return;
-		let display = '<center><u><b>Richest Users</b></u></center><br><table border="1" cellspacing="0" cellpadding="5" width="100%"><tbody><tr><th>Rank</th><th>Username</th><th>Money</th></tr>';
 		let keys = Object.keys(Db('money').object()).map(function (name) {
 			return {name: name, money: Db('money').get(name)};
 		});
 		if (!keys.length) return this.sendReplyBox("Money ladder is empty.");
-		keys.sort(function (a, b) {
-			return b.money - a.money;
-		});
-		keys.slice(0, 10).forEach(function (user, index) {
-			display += "<tr><td>" + (index + 1) + "</td><td>" + user.name + "</td><td>" + user.money + "</td></tr>";
-		});
-		display += "</tbody></table>";
-		this.sendReply("|raw|" + display);
+		keys.sort(function (a, b) { return b.money - a.money; });
+		this.sendReplyBox(rankLadder('Richest Users', 'Money', keys.slice(0, 100), 'money'));
 	},
-
-	dicegame: 'startdice',
-	dicestart: 'startdice',
-	startdice: function (target, room, user) {
-		if (!this.can('broadcast', null, room)) return false;
-		if (!target) return this.parse('/help startdice');
-		if (!this.canTalk()) return this.errorReply("You can not start dice games while unable to speak.");
-
-		let amount = isMoney(target);
-
-		if (typeof amount === 'string') return this.errorReply(amount);
-		if (!room.dice) room.dice = {};
-		if (room.dice.started) return this.errorReply("A dice game has already started in this room.");
-
-		room.dice.started = true;
-		room.dice.bet = amount;
-		// Prevent ending a dice game too early.
-		room.dice.startTime = Date.now();
-
-		room.addRaw("<div class='infobox'><h2><center><font color=#24678d>" + user.name + " has started a dice game for </font><font color=red>" + amount + "</font><font color=#24678d>" + currencyName(amount) + ".</font><br><button name='send' value='/joindice'>Click to join.</button></center></h2></div>");
-	},
-	startdicehelp: ["/startdice [bet] - Start a dice game to gamble for money."],
-
-	joindice: function (target, room, user) {
-		if (!room.dice || (room.dice.p1 && room.dice.p2)) return this.errorReply("There is no dice game in it's signup phase in this room.");
-		if (!this.canTalk()) return this.errorReply("You may not join dice games while unable to speak.");
-		if (room.dice.p1 === user.userid) return this.errorReply("You already entered this dice game.");
-		if (Db('money').get(user.userid, 0) < room.dice.bet) return this.errorReply("You don't have enough bucks to join this game.");
-		Db('money').set(user.userid, Db('money').get(user.userid) - room.dice.bet);
-		if (!room.dice.p1) {
-			room.dice.p1 = user.userid;
-			room.addRaw("<b>" + user.name + " has joined the dice game.</b>");
-			return;
-		}
-		room.dice.p2 = user.userid;
-		room.addRaw("<b>" + user.name + " has joined the dice game.</b>");
-		let p1Number = Math.floor(6 * Math.random()) + 1;
-		let p2Number = Math.floor(6 * Math.random()) + 1;
-		let output = "<div class='infobox'>Game has two players, starting now.<br>Rolling the dice.<br>" + room.dice.p1 + " has rolled a " + p1Number + ".<br>" + room.dice.p2 + " has rolled a " + p2Number + ".<br>";
-		while (p1Number === p2Number) {
-			output += "Tie... rolling again.<br>";
-			p1Number = Math.floor(6 * Math.random()) + 1;
-			p2Number = Math.floor(6 * Math.random()) + 1;
-			output += room.dice.p1 + " has rolled a " + p1Number + ".<br>" + room.dice.p2 + " has rolled a " + p2Number + ".<br>";
-		}
-		let winner = room.dice[p1Number > p2Number ? 'p1' : 'p2'];
-		output += "<font color=#24678d><b>" + winner + "</b></font> has won <font color=#24678d><b>" + room.dice.bet + "</b></font>" + currencyName(room.dice.bet) + ".<br>Better luck next time " + room.dice[p1Number < p2Number ? 'p1' : 'p2'] + "!</div>";
-		room.addRaw(output);
-		Db('money').set(winner, Db('money').get(winner, 0) + room.dice.bet * 2);
-		delete room.dice;
-	},
-
-	enddice: function (target, room, user) {
-		if (!user.can('broadcast', null, room)) return false;
-		if (!room.dice) return this.errorReply("There is no dice game in this room.");
-		if ((Date.now() - room.dice.startTime) < 15000 && !user.can('broadcast', null, room)) return this.errorReply("Regular users may not end a dice game within the first minute of it starting.");
-		if (room.dice.p2) return this.errorReply("Dice game has already started.");
-		if (room.dice.p1) Db('money').set(room.dice.p1, Db('money').get(room.dice.p1, 0) + room.dice.bet);
-		room.addRaw("<b>" + user.name + " ended the dice game.</b>");
-		delete room.dice;
-	},
+	richestuserhelp: ["/moneyladder or /richestuser - Displays users ranked by the amount of Avalon Bucks they possess."],
 
 	bucks: 'economystats',
 	economystats: function (target, room, user) {
@@ -385,10 +410,47 @@ exports.commands = {
 		const total = users.reduce(function (acc, cur) {
 			return acc + Db('money').get(cur);
 		}, 0);
-		let average = Math.floor(total / users.length) || '0';
-		let output = "There " + (total > 1 ? "are " : "is ") + total + currencyName(total) + " circulating in the economy. ";
+		let average = Math.floor(total / users.length);
+		let output = "There is " + total + currencyName(total) + " circulating in the economy. ";
 		output += "The average user has " + average + currencyName(average) + ".";
 		this.sendReplyBox(output);
 	},
+	economystatshelp: ["/economystats - Gives information about the state of the economy."],
 
+	togglerolling: function (target, room, user) {
+		if (!this.can('bypassall') && !~highRollers.indexOf(user.userid)) return false;
+		if (!target) return this.sendReply("Either toggle it on or off.");
+		if (target === 'on') {
+			if (toggleRolling === true) {
+				return this.sendReply("We are already rolling");
+			} else {
+				toggleRolling = true;
+				return this.sendReply("We are now rolling!");
+			}
+		}
+		if (target === 'off') {
+			if (toggleRolling === false) {
+				return this.sendReply("We are not rolling right now.");
+			} else {
+				toggleRolling = false;
+				return this.sendReply("We are not rolling anymore.");
+			}
+		}
+	},
+	togglerollinghelp: ["/togglerolling - Enables or disables dice globally. Requires ~"],
+
+	cleaneconomy: function (target, room, user) {
+		if (!this.can('hotpatch')) return false;
+		let moneyObject = Db('money').object();
+		Object.keys(moneyObject)
+			.filter(function (name) {
+				return Db('money').get(name) < 1;
+			})
+			.forEach(function (name) {
+				delete moneyObject[name];
+			});
+		Db.save();
+		this.sendReply("All users who has less than 1 buck are now removed from the database.");
+	},
+	cleaneconomyhelp: ["/cleaneconomy - Cleans economy databases by removing users with less than one buck. Requires ~"],
 };
