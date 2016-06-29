@@ -2,6 +2,14 @@
 /*eslint no-restricted-modules: [0]*/
 
 let moment = require('moment');
+let geoip = {};
+
+try {
+	geoip = require('geoip-ultralight');
+	geoip.startWatchingDataUpdate();
+} catch (e) {
+	console.error(e);
+
 
 let BR = '<br>';
 let SPACE = '&nbsp;';
@@ -133,12 +141,31 @@ Profile.prototype.seen = function (timeAgo) {
 	return label('Last Seen') + moment(timeAgo).fromNow();
 };
 
+Profile.prototype.vip = function (user) {
+	if (isVip(user)) return '(' + font('#0066ff', '(<b>VIP User</b>' + ')';
+	return '';
+	
+};
+
+Profile.prototype.dev = function (user) {
+	if (isDev(user)) return font('#33cc33', '(<b>Developer</b>)');
+	return '';
+	
+};
+
+Profile.prototype.getFlag = function(user) {
+		if (targetUser) {
+			let country = geoip.lookupCountry(Users(user).latestIp);
+			if (country) flag = ' <img title = "' + country + '" src = "http://' + this.url + ':' + Config.port + '/flags/' + country.toLowerCase() + '.gif">';
+		}
+};
+
 Profile.prototype.show = function (callback) {
 	let userid = toId(this.username);
 
 	return this.buttonAvatar() +
-		SPACE + this.name() + BR +
-		SPACE + this.group() + BR +
+		SPACE + this.name() + this.getFlag(this.user || this.userid) + BR +
+		SPACE + this.group() + this.vip(this.user || this.userid) + this.dev(this.user || this.userid) + BR + //user and dev both for more accuracy of checking
 		SPACE + this.money(Db('money').get(userid, 0)) + BR +
 		SPACE + this.seen(Db('seen').get(userid)) +
 		'<br clear="all">';
