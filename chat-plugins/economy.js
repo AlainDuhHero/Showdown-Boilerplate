@@ -4,9 +4,7 @@
  * This file handles the money system and some of its key commands like the shop
 ********************/
 let fs = require('fs');
-let color = require('../config/color');
 let path = require('path');
-let rankLadder = require('../rank-ladder');
 let highRollers = [''];//put in your name here
 let toggleRolling = false;
 
