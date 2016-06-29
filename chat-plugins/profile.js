@@ -1,12 +1,11 @@
 'use strict';
 /*eslint no-restricted-modules: [0]*/
 
-let color = require('../config/color');
 let moment = require('moment');
 
 let BR = '<br>';
 let SPACE = '&nbsp;';
-let profileColor = '#24678d';
+let profileColor = '#000000';
 let trainersprites = [1, 2, 101, 102, 169, 170, 265, 266, 168];
 
 /**
@@ -125,7 +124,7 @@ Profile.prototype.money = function (amount) {
 };
 
 Profile.prototype.name = function () {
-	return label('Name') + bold(font(color(toId(this.username)), this.username));
+	return label('Name') + bold(font(hashColor(toId(this.username)), this.username));
 };
 
 Profile.prototype.seen = function (timeAgo) {
