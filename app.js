@@ -124,7 +124,9 @@ global.Rooms = require('./rooms.js');
 
 global.Tells = require('./tells.js');
 
-global.Db = require('origindb')('config/db');
+global.Db = require('origindb')('config/Database');
+
+global.rankLadder = require('./rank-ladder.js')
 
 delete process.send; // in case we're a child process
 global.Verifier = require('./verifier.js');
