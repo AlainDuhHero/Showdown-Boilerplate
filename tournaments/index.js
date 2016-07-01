@@ -797,12 +797,7 @@ class Tournament {
 		}));
 		this.isEnded = true;
 		if (this.autoDisqualifyTimer) clearTimeout(this.autoDisqualifyTimer);
-
-		//
 		// Tournament Winnings
-		//
-
-		let color = '#088cc7';
 		let sizeRequiredToEarn = 4;
 		let currencyName = function (amount) {
 			let name = " buck";
@@ -822,17 +817,25 @@ class Tournament {
 		let wid = toId(winner);
 		let rid = toId(runnerUp);
 		let tourSize = this.generator.users.size;
-
+		
+		if (this.room.isOfficial && tourSize >= 4) {
+ 			try {
+ 				let tourRarity = tourCard(tourSize, toId(winner));
+ 				this.room.addRaw(nameColor(winner, true) + " has won a <font color=" + tourRarity[0] + ">" + tourRarity[1] + "</font> card: <button class='tourcard-btn' style='border-radius: 20px; box-shadow: 1px 1px rgba(255, 255, 255, 0.3) inset, -1px -1px rgba(0, 0, 0, 0.2) inset, 2px 2px 2px rgba(0, 0, 0, 0.5);' name='send' value='/card " + tourRarity[2] + "'>" + tourRarity[3] + "</button> from the tournament.");
+ 			} catch (e) {
+ 				console.log('Error giving cards for tournaments: ' + e.stack);
+ 			}
+ 		}
 		if (this.room.isOfficial && tourSize >= sizeRequiredToEarn) {
 			let firstMoney = Math.round(tourSize / 4);
 			let secondMoney = Math.round(firstMoney / 2);
 
 			Db('money').set(wid, Db('money').get(wid, 0) + firstMoney);
-			this.room.addRaw("<b><font color='" + color + "'>" + Tools.escapeHTML(winner) + "</font> has won " + "<font color='" + color + "'>" + firstMoney + "</font>" + currencyName(firstMoney) + " for winning the tournament!</b>");
+			this.room.addRaw(nameColor(winner, true) + " has won " + "<b><u><font color='red'>" + firstMoney + "</font></u></b>" + currencyName(firstMoney) + " for winning the tournament!</b>");
 
 			if (runnerUp) {
 				Db('money').set(rid, Db('money').get(rid, 0) + secondMoney);
-				this.room.addRaw("<b><font color='" + color + "'>" + Tools.escapeHTML(runnerUp) + "</font> has won " +  "<font color='" + color + "'>" + secondMoney + "</font>" + currencyName(secondMoney) + " for winning the tournament!</b>");
+				this.room.addRaw(nameColor(runnerUp, true) + " has won " +  "<b><u><font color='red'>" + secondMoney + "</font></u></b>" + currencyName(secondMoney) + " for coming second in the tournament!</b>");
 			}
 		}
 		delete exports.tournaments[this.room.id];
