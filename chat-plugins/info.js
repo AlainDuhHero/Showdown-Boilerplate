@@ -13,6 +13,9 @@
 'use strict';
 
 const path = require('path');
+const geoip = require('geoip-ultralight');
+geoip.startWatchingDataUpdate();
+let serverIp = Config.avatarUrl || '';
 
 exports.commands = {
 
@@ -32,7 +35,10 @@ exports.commands = {
 			return this.errorReply("/alts - Access denied.");
 		}
 
-		let buf = '<strong class="username"><small style="display:none">' + targetUser.group + '</small>' + Tools.escapeHTML(targetUser.name) + '</strong> ' + (!targetUser.connected ? ' <em style="color:gray">(offline)</em>' : '');
+		let buf = '<strong class="username"><small style="display:none">' + targetUser.group + '</small>' + nameColor(targetUser.name) + '</strong> ' + (!targetUser.connected ? ' <em style="color:red">(offline)</em>' : '');
+		let flag = ' ', country = geoip.lookupCountry(targetUser.latestIp);
+ 		if (country) flag = ' <img title = "' + country + '" src = "http://' + serverIp + ':' + Config.port + '/flags/' + country.toLowerCase() + '.gif">';
+ 		buf += flag;
 		let roomauth = '';
 		if (room.auth && targetUser.userid in room.auth) roomauth = room.auth[targetUser.userid];
 		if (Config.groups[roomauth] && Config.groups[roomauth].name) {
