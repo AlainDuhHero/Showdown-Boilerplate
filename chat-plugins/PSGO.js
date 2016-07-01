@@ -89,7 +89,7 @@ function cacheRarity() {
 	}
 }
 
-Wisp.tourCard = function (tourSize, userid) {
+global.tourCard = function (tourSize, userid) {
 	if (tourSize > 32) tourSize = 32;
 	let tourRarity = tourCardRarity[Math.floor(tourSize / 4)];
 	let cacheValue = rareCache[cleanCard.indexOf(toId(tourRarity))];
@@ -342,7 +342,7 @@ exports.commands = {
 				managers.push(toId(target));
 				fs.writeFileSync('config/psgo/card-managers.csv', managers.join(','));
 				this.sendReply("You've set " + target + " as a card manager.");
-				if (Users(target) && Users(target).connected) Users(target).send("|popup||html|" + Wisp.nameColor(user.name) + " has set you as a card manager.");
+				if (Users(target) && Users(target).connected) Users(target).send("|popup||html|" + nameColor(user.name, true) + " has set you as a card manager.");
 				log(user.name + " set " + target + " as a card manager.");
 			},
 			del: 'delete',
@@ -355,7 +355,7 @@ exports.commands = {
 				managers.splice(managers.indexOf(toId(target)), 1);
 				fs.writeFileSync('config/psgo/card-managers.csv', managers.join(','));
 				this.sendReply("You've removed " + target + "'s card manager status.");
-				if (Users(target) && Users(target).connected) Users(target).send("|popup||html|" + Wisp.nameColor(user.name) + " has removed your card manager status.");
+				if (Users(target) && Users(target).connected) Users(target).send("|popup||html|" + nameColor(user.name, true) + " has removed your card manager status.");
 				log(user.name + " removed " + target + "'s card manager status.");
 			},
 			view: 'list',
@@ -363,7 +363,7 @@ exports.commands = {
 				if (!this.runBroadcast()) return;
 				if (managers.length < 1) return this.sendReplyBox("There are no card managers.");
 				let output = [];
-				for (let u in managers) output.push(Wisp.nameColor(managers[u], true));
+				for (let u in managers) output.push(nameColor(managers[u], true));
 				this.sendReplyBox("The current card managers are:<br />" + output.join(', '));
 			},
 		},
@@ -550,7 +550,7 @@ exports.commands = {
 		const cardsMapping = cards.map(function (card) {
 			return '<button name="send" value="/card ' + card.title + '" style="border-radius: 12px; box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.2) inset;" class="card-button"><img src="' + card.card + '" width="80" title="' + card.name + '"></button>';
 		});
-		this.sendReplyBox('<div style="max-height: 300px; overflow-y: scroll;">' + cardsMapping.join('') + '</div><br><center><b><font color="' + Wisp.hashColor(userid) + '">' + userid + '</font> has ' + cards.length + ' cards and ' + getPointTotal(userid) + ' points.</b></center>');
+		this.sendReplyBox('<div style="max-height: 300px; overflow-y: scroll;">' + cardsMapping.join('') + '</div><br><center>' + nameColor(userid, true) + ' has ' + cards.length + ' cards and ' + getPointTotal(userid) + ' points.</b></center>');
 	},
 
 	card: function (target, room, user) {
