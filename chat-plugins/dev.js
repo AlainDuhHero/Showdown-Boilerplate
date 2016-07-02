@@ -16,7 +16,7 @@ exports.commands = {
 		        if (!target || target.indexOf(',') < 0) ;
                         let parts = target.split(',');
 	     	        let username = parts[0];
-		         if (!devUser) return this.parse('/help dev');
+		        if (!devUser) return this.parse('/help dev');
 			if (isDev(devUser)) return this.errorReply(devUser + ' is already a dev.');
 			Db('devs').set(devUser, 1);
 		        if (Users.get(username)) Users(username).popup(user.name + " You have recieved DEV status from ~"+user.name );
