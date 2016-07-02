@@ -167,7 +167,7 @@ exports.commands = {
 		if (!targetId) return this.parse('/help wallet');
 
 		const amount = Db('money').get(targetId, 0);
-		this.sendReplyBox('<b><font color="' + hashColor(targetId) + '">' + Tools.escapeHTML(target) + '</font></b> has ' + amount + currencyName(amount) + '.');
+		this.sendReplyBox(nameColor(targetId, true) + ' has ' + amount + currencyName(amount) + '.');
 	},
 	wallethelp: ["/wallet [user] - Shows the amount of money a user has."],
 
@@ -192,7 +192,7 @@ exports.commands = {
 		amount = amount + currencyName(amount);
 		total = total + currencyName(total);
 		this.sendReply(username + " was given " + amount + ". " + username + " now has " + total + ".");
-		if (Users.get(username)) Users.get(username).popup(user.name + " has given you " + amount + ". You now have " + total + ".");
+		if (Users.get(username)) Users.get(username).popup("|modal||html|" + nameColor(user.name, true) + " has given you " + amount + ". You now have " + total + ".");
 		logMoney(username + " was given " + amount + " by " + user.name + ".");
 	},
 	givemoneyhelp: ["/givemoney [user], [amount] - Give a user a certain amount of money."],
@@ -219,7 +219,7 @@ exports.commands = {
 		amount = amount + currencyName(amount);
 		total = total + currencyName(total);
 		this.sendReply(username + " lost " + amount + ". " + username + " now has " + total + ".");
-		if (Users.get(username)) Users.get(username).popup(user.name + " has taken " + amount + " from you. You now have " + total + ".");
+		if (Users.get(username)) Users.get(username).popup("|modal||html|" + nameColor(user.name, true) + " has taken " + amount + " from you. You now have " + total + ".");
 		logMoney(username + " had " + amount + " taken away by " + user.name + ".");
 	},
 	takemoneyhelp: ["/takemoney [user], [amount] - Take a certain amount of money from a user."],
@@ -228,9 +228,11 @@ exports.commands = {
 	resetbucks: 'resetmoney',
 	resetmoney: function (target, room, user) {
 		if (!this.can('forcewin')) return false;
+		target = toId(target);
 		if(!target) target = user.name;
-		Db('money').set(toId(target), 0);
+		Db('money').set(target, 0);
 		this.sendReply(target + " now has " + 0 + currencyName(0) + ".");
+		target.poup("|modal||html|" nameColor(user.name, true) + "has taken all your money.")
 		logMoney(user.name + " reset the money of " + target + ".");
 	},
 	resetmoneyhelp: ["/resetmoney [user] - Reset user's money to zero."],
@@ -266,7 +268,7 @@ exports.commands = {
 		amount = amount + currencyName(amount);
 
 		this.sendReply("You have successfully transferred " + amount + ". You now have " + userTotal + ".");
-		if (Users.get(username)) Users(username).popup(user.name + " has transferred " + amount + ". You now have " + targetTotal + ".");
+		if (Users.get(username)) Users(username).popup("|modal||html|" + nameColor(user.name, true) + " has transferred " + amount + ". You now have " + targetTotal + ".");
 		logMoney(user.name + " transferred " + amount + " to " + username + ". " + user.name + " now has " + userTotal + " and " + username + " now has " + targetTotal + ".");
 	},
 	transfermoneyhelp: ["/transfer [user], [amount] - Transfer a certain amount of money to a user."],
