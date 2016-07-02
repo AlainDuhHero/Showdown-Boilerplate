@@ -13,21 +13,21 @@ exports.commands = {
 		give: function (target, room, user) {
 			if (!this.can('declare')) return false;
 			let devUser = toId(target);
-		    if (!target || target.indexOf(',') < 0) ;
-            let parts = target.split(',');
-	     	let username = parts[0];
-		    if (!devUser) return this.parse('/help dev');
+		        if (!target || target.indexOf(',') < 0) ;
+                        let parts = target.split(',');
+	     	        let username = parts[0];
+		         if (!devUser) return this.parse('/help dev');
 			if (isDev(devUser)) return this.errorReply(devUser + ' is already a dev.');
 			Db('devs').set(devUser, 1);
-		if (Users.get(username)) Users(username).popup(user.name + " You have recieved DEV status from ~"+user.name );
+		        if (Users.get(username)) Users(username).popup(user.name + " You have recieved DEV status from ~"+user.name );
 			this.sendReply(devUser + ' has been granted with dev status.');
 		},
 		take: function (target, room, user) {
 			if (!this.can('declare')) return false;
 			let devUser = toId(target);
 			if (!target || target.indexOf(',') < 0) ;
-            let parts = target.split(',');
-	     	let username = parts[0];
+                        let parts = target.split(',');
+	     	        let username = parts[0];
 			if (!devUser) return this.parse('/help dev');
 			if (!isDev(devUser)) return this.errorReply(devUser + ' is not a dev.');
 			Db('devs').delete(devUser);
