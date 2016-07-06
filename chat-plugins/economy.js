@@ -289,7 +289,7 @@ exports.commands = {
 		if (!cost) return;
 		let total = Db('money').set(user.userid, amount - cost).get(user.userid);
 		this.sendReply("You have bought " + target + " for " + cost + currencyName(cost) + ". You now have " + total + currencyName(total) + " left.");
-		room.addRaw(user.name + " has bought <b>" + target + "</b> from the shop.");
+		room.addRaw(nameColor(user.name, true) + " has bought <b>" + target + "</b> from the shop.");
 		logMoney(user.name + " has bought " + target + " from the shop. This user now has " + total + currencyName(total) + ".");
 		handleBoughtItem.call(this, target.toLowerCase(), user, cost);
 	},
@@ -400,7 +400,7 @@ exports.commands = {
 		keys.sort(function (a, b) { return b.money - a.money; });
 		this.sendReplyBox(rankLadder('Richest Users', 'Money', keys.slice(0, 100), 'money'));
 	},
-	richestuserhelp: ["/moneyladder or /richestuser - Displays users ranked by the amount of Avalon Bucks they possess."],
+	richestuserhelp: ["/moneyladder or /richestuser - Displays users ranked by the amount of Bucks they possess."],
 
 	bucks: 'economystats',
 	economystats: function (target, room, user) {
