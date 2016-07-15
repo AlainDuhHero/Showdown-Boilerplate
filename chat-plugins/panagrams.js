@@ -2,7 +2,6 @@
  * Created by SilverTactic (Siilver) and panpawn
  * This is a plugin that uses the anagrams 
  * format that is dedicated to Pokemon
- * names. Winners recieve 0.25 bucks a peice.
  */
 if (!global.pGames) global.pGames = {};
 var pGames = global.pGames;
@@ -59,7 +58,7 @@ var Panagram = (function () {
 	Panagram.prototype.guess = function (user, guess) {
 		if (guess.species === this.answer.species) {
 			this.room.add('|html|<b>' + user.name + '</b> guessed <b>' + guess.species + '</b>, which was the correct answer! This user has also won 1 ticket!');
-			Db('money').set(toId(user.userid), Db('money').get(toId(user), 0) + 1).get(toId(user.userid));
+			Db('money').set(toId(user.userid), Db('credits').get(toId(user), 0) + 1).get(toId(user.userid));
 			this.end();
 		} else {
 			this.room.add('|html|<b>' + user.name + '</b> guessed <b>' + guess.species + '</b>, but was not the correct answer...');
